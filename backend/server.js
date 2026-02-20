@@ -232,7 +232,11 @@ const hasFrontendBuild = fs.existsSync(frontendIndexPath);
 if (hasFrontendBuild) {
   app.use(express.static(frontendDistPath));
 
-  app.get('*', (req, res) => {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') {
+      return next();
+    }
+
     res.sendFile(frontendIndexPath);
   });
 } else {
