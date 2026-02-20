@@ -21,4 +21,4 @@ COPY --from=builder /app/frontend/dist ./frontend/dist
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
 
 EXPOSE 8080
-CMD ["npm", "--prefix", "backend", "start"]
+CMD ["node", "backend/server.js"]
