@@ -31,7 +31,7 @@ const VICTORY_LINES = {
 };
 
 function App() {
-  const API_BASE = "http://localhost:8080";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:8080" : "");
   const DEFAULT_ENERGY = 10;
   const COMBO_WINDOW_MS = 90000;
   const GODMODE_STREAK = 5;
@@ -296,9 +296,31 @@ function App() {
     });
   }, [focusRunning, focusSecondsLeft, triggerCelebration]);
 
+  const fetchIntel = useCallback(async () => {
+    setLoadingIntel(true);
+    setError("");
+    try {
+      const [insightResponse, forecastResponse] = await Promise.all([
+        fetch(`${API_BASE}/insight`),
+        fetch(`${API_BASE}/forecast?days=7`)
+      ]);
+      if (!insightResponse.ok || !forecastResponse.ok) {
+        throw new Error("Intel endpoints unavailable");
+      }
+      const insightData = await insightResponse.json();
+      const forecastData = await forecastResponse.json();
+      setInsight(insightData);
+      setForecast(forecastData);
+    } catch {
+      setError("Could not fetch intelligence feed.");
+    } finally {
+      setLoadingIntel(false);
+    }
+  }, [API_BASE]);
+
   useEffect(() => {
     fetchIntel();
-  }, []);
+  }, [fetchIntel]);
 
   const energyStatus = useMemo(() => {
     if (energy >= 80) return "Legendary";
@@ -521,28 +543,6 @@ function App() {
       setError("Could not load a challenge right now.");
     } finally {
       setLoadingChallenge(false);
-    }
-  }
-
-  async function fetchIntel() {
-    setLoadingIntel(true);
-    setError("");
-    try {
-      const [insightResponse, forecastResponse] = await Promise.all([
-        fetch(`${API_BASE}/insight`),
-        fetch(`${API_BASE}/forecast?days=7`)
-      ]);
-      if (!insightResponse.ok || !forecastResponse.ok) {
-        throw new Error("Intel endpoints unavailable");
-      }
-      const insightData = await insightResponse.json();
-      const forecastData = await forecastResponse.json();
-      setInsight(insightData);
-      setForecast(forecastData);
-    } catch {
-      setError("Could not fetch intelligence feed.");
-    } finally {
-      setLoadingIntel(false);
     }
   }
 

@@ -1,6 +1,8 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 const cors = require('cors');
 app.use(cors());
@@ -185,14 +187,6 @@ function buildInsight() {
   };
 }
 
-app.get('/', async (req, res) => { 
-  res.json({
-    app: 'Fix Katinka Engine',
-    version: '2.0.0',
-    endpoints: ['/fix', '/challenge', '/insight', '/forecast', '/health']
-  });
-});
-
 app.get('/fix', (req, res) => {
   const { intensity = 5, weather = 'cloudy' } = req.query;
   const plan = buildFixPlan(intensity, String(weather).toLowerCase());
@@ -230,6 +224,26 @@ app.get('/forecast', (req, res) => {
   const days = Math.max(3, Math.min(14, Number(req.query.days) || 7));
   res.json(buildForecast(days));
 });
+
+const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
+const frontendIndexPath = path.join(frontendDistPath, 'index.html');
+const hasFrontendBuild = fs.existsSync(frontendIndexPath);
+
+if (hasFrontendBuild) {
+  app.use(express.static(frontendDistPath));
+
+  app.get('*', (req, res) => {
+    res.sendFile(frontendIndexPath);
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      app: 'Fix Katinka Engine',
+      version: '2.0.0',
+      endpoints: ['/fix', '/challenge', '/insight', '/forecast', '/health']
+    });
+  });
+}
 
 app.listen(port, () => { 
   console.log(`Backend server listening at http://localhost:${port}`);
